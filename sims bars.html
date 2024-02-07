@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Matthew Abinett">
+    <title>Sims-like Needs Bars</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="needsCanvas" width="120" height="250"></canvas>
+
+    <script>
+        // Define the needs data (values between 0 and 100)
+        const needsData = {
+            hunger: 90,
+            fun: 90,
+			comfort: 90,
+            social: 90,
+            hygiene: 90,
+            energy: 90,
+			envionment: 90
+        };
+
+        // Get the canvas and context
+        const canvas = document.getElementById('needsCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Variables for tracking the dragged bar
+        let isDragging = false;
+        let draggedBar = null;
+
+        // Function to draw a needs bar
+        function drawNeedsBar(x, y, value, label) {
+            const barWidth = 100;
+            const barHeight = 20;
+
+            // Calculate the fill percentage
+            const fillPercentage = value / 100;
+
+            // Dynamically calculate the color based on the fill percentage
+            const color = `rgb(${Math.round(255 * (1 - fillPercentage))}, ${Math.round(255 * fillPercentage)}, 0)`;
+
+            // Draw the bar
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, fillPercentage * barWidth, barHeight);
+
+            // Draw the border
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(x, y, barWidth, barHeight);
+
+            // Draw the label
+            ctx.fillStyle = '#000';
+            ctx.font = '14px Arial';
+            ctx.fillText(label, x + 10, y + barHeight / 2 + 5);
+        }
+
+        // Function to handle mouse or touch down event
+        function handleDown(event) {
+            const clientX = event.type.startsWith('mouse') ? event.clientX : event.touches[0].clientX;
+            const clientY = event.type.startsWith('mouse') ? event.clientY : event.touches[0].clientY;
+
+            const mouseX = clientX - canvas.getBoundingClientRect().left;
+            const mouseY = clientY - canvas.getBoundingClientRect().top;
+
+            // Check if the mouse or touch is over any bar
+            let i = 0;
+            for (const [need, value] of Object.entries(needsData)) {
+                const barX = 10;
+                const barY = 20 + i * 30;
+                const barWidth = 100;
+                const barHeight = 20;
+
+                if (
+                    mouseX >= barX &&
+                    mouseX <= barX + barWidth &&
+                    mouseY >= barY &&
+                    mouseY <= barY + barHeight
+                ) {
+                    isDragging = true;
+                    draggedBar = need;
+                    break;
+                }
+                i++;
+            }
+        }
+
+        // Function to handle mouse or touch move event
+        function handleMove(event) {
+            if (isDragging) {
+                const clientX = event.type.startsWith('mouse') ? event.clientX : event.touches[0].clientX;
+                const mouseX = clientX - canvas.getBoundingClientRect().left;
+
+                const newPercentage = Math.min(1, Math.max(0, (mouseX - 10) / 100));
+                needsData[draggedBar] = newPercentage * 100;
+
+                drawAllNeedsBars();
+				event.preventDefault();
+            }
+			
+        }
+
+        // Function to handle mouse or touch up event
+        function handleUp() {
+            isDragging = false;
+            draggedBar = null;
+			localStorage.setItem("needs");
+        }
+
+        // Add event listeners for both mouse and touch events
+        canvas.addEventListener('mousedown', handleDown);
+        canvas.addEventListener('touchstart', handleDown);
+
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchmove', handleMove);
+
+        canvas.addEventListener('mouseup', handleUp);
+        canvas.addEventListener('touchend', handleUp);
+
+        // Function to draw all needs bars
+        function drawAllNeedsBars() {
+			let yOffset = 20;
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (const [need, value] of Object.entries(needsData)) {
+                drawNeedsBar(10, yOffset, value, need.toUpperCase());
+                yOffset += 30;
+            }
+        }
+
+        // Call the function to draw all needs bars
+        drawAllNeedsBars();
+    </script>
+</body>
+</html>
